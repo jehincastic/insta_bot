@@ -3,7 +3,7 @@ import puppeteer from 'puppeteer';
 import Page from '../../Page';
 import {
   auth,
-  job,
+  postInfo,
 } from '../../config';
 import { typeSelctor } from '../../types';
 import {
@@ -11,6 +11,7 @@ import {
   getRandomNumber,
 } from '../../common/utils';
 import Post from './Post';
+import User from './User';
 
 class Instagram extends Page {
   constructor(browser: puppeteer.Browser) {
@@ -51,15 +52,13 @@ class Instagram extends Page {
       await this.waitFor(getRandomNumber(500, 1500));
       return this.skipAlerts();
     } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(err);
       throw err;
     }
   }
 
   async getPostsByTag(tag: string) {
     try {
-      const { numberOfPosts } = job;
+      const { numberOfPosts } = postInfo;
       await this.waitFor(getRandomNumber(1200, 2500));
       if (this.page) {
         await this.page.close();
@@ -71,13 +70,14 @@ class Instagram extends Page {
       const divs = await this.page.$$('article h2+div');
       if (divs.length >= 2) {
         const posts = await divs[1].$$('a');
-        const postUrl: string[] = [];
+        let postUrl: (string | null)[] = [];
         if (posts.length > 0) {
+          const promArr: Promise<string | null>[] = [];
           for (let i = 0; i < posts.length; i += 1) {
             const element = posts[i];
-            const url = await element.evaluate(((node) => node.getAttribute('href')));
-            postUrl.push(url || '');
+            promArr.push(element.evaluate(((node) => node.getAttribute('href'))));
           }
+          postUrl = await Promise.all(promArr);
         }
         return getRandomElements(postUrl, numberOfPosts);
       }
@@ -87,11 +87,11 @@ class Instagram extends Page {
     }
   }
 
-  async openAllPosts(posts: string[]) {
+  async openAllPosts(posts: (string | null)[]) {
     try {
       for (let i = 0; i < posts.length; i += 1) {
         const postUrl = posts[i];
-        if (postUrl !== '') {
+        if (postUrl) {
           await this.waitFor(getRandomNumber(500, 2000));
           const post = new Post(postUrl, this.browser);
           await post.navigateToPage();
@@ -105,6 +105,16 @@ class Instagram extends Page {
       // eslint-disable-next-line no-console
       console.log('Done All');
       return;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async getUserProfile(username: string) {
+    try {
+      const user = new User(username, this.browser);
+      await user.getInfo();
+      await user.followUser();
     } catch (err) {
       throw err;
     }

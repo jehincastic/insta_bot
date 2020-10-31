@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 
 import Page from '../../Page';
+import { getRandomNumber } from '../../common/utils';
 
 class Post extends Page {
   private postLink = '';
@@ -30,6 +31,7 @@ class Post extends Page {
 
   async likePost() {
     try {
+      await this.waitFor(getRandomNumber(400, 800));
       const likedButton = await this.page.$('svg[aria-label="Like"][width="24"]');
       await likedButton?.click();
       return;

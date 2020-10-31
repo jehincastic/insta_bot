@@ -81,7 +81,7 @@ class Page {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  protected waitFor(ms: number) {
+  protected waitFor(ms: number): Promise<void> {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve();
